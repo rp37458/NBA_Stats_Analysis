@@ -1,0 +1,146 @@
+---
+title: "Project 2"
+output: html_document
+date: "2023-11-04"
+author: "Ritesh Penumatsa"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include = TRUE, results = "hide", warning=FALSE,message=FALSE)
+```
+
+## Introduction
+
+
+## Data Preparation 
+
+```{r}
+# Load the necessary library
+library(rvest)
+
+# Specify the URL
+NBA_Stats <- "https://www.basketball-reference.com/leagues/NBA_2023_per_game.html"
+
+# Read the HTML content of the web page
+Player_Stats <- read_html(NBA_Stats)
+
+# Extract player names
+Player_Name <- html_text(html_elements(Player_Stats,"th+ .left"))
+
+# Extract minutes played for each player
+Minutes_Played <- html_text(html_elements(Player_Stats, ".right:nth-child(8)"))
+
+# Extract points per game for each player
+Points_Per_Game <- html_text(html_elements(Player_Stats, ".right:nth-child(30)"))
+
+# Extract field goals made for each player
+Field_Goals_Made <- html_text((html_elements(Player_Stats, ".right:nth-child(9)")))
+
+# Extract number of turnovers for each player
+TurnOvers <- html_text((html_elements(Player_Stats, ".right:nth-child(28)")))
+
+# Extract Number of Free Throws Made for each player
+FreeThrows_Made <- html_text((html_elements(Player_Stats, ".right:nth-child(19)")))
+```
+
+## Variable Descriptions
+
+```{r}
+
+selected_data <- data.frame(
+  Name = Player_Name,
+  Minutes = Minutes_Played,
+  Points = Points_Per_Game,
+  Field_Goals = Field_Goals_Made,
+  TurnOvers = TurnOvers,
+  FreeThrow = FreeThrows_Made
+)
+
+selected_data <- na.omit(selected_data)
+selected_data$Points <- as.numeric(selected_data$Points)
+selected_data$Minutes <- as.numeric(selected_data$Minutes)
+selected_data$Field_Goals <- as.numeric(selected_data$Field_Goals)
+selected_data$TurnOvers <- as.numeric(selected_data$TurnOvers)
+selected_data$FreeThrow <- as.numeric(selected_data$FreeThrow)
+```
+
+## Univariate Analysis
+
+```{r}
+library(ggplot2)
+
+points_scored_distribution <- ggplot(selected_data, aes(x=Points)) +
+  geom_histogram(binwidth = 1, fill = "lightblue", color = "black") +
+  labs(title = "Points Per Game Distribution", x = "Points Per Game", y = "Frequency"
+  ) + theme_bw()
+print(points_scored_distribution)
+
+
+# Create the histogram plot
+minutes_played_distribution <- ggplot(selected_data, aes(x = Minutes)) +
+  geom_histogram(binwidth = 1, fill = "darkred", color = "black") +
+  labs(title = "Minutes Played Per Game Distribution", x = "Minutes Played Per Game", y = "Frequency") +
+  theme_bw()
+
+# Display the plot
+print(minutes_played_distribution)
+
+field_goal_distribution <- ggplot(selected_data, aes(x = Field_Goals)) +
+  geom_histogram(binwidth = 1, fill = "orange", color = "black") +
+  labs(title = "Field Goals Per Game Distribution", x = "Field Goals Per Game", y = "Frequency") +
+  theme_bw()
+
+print(field_goal_distribution)
+
+
+turnover_distribution <- ggplot(selected_data, aes(x = TurnOvers)) +
+  geom_boxplot(fill="gray", color = "black") +
+  labs(title = "Turnovers Per Game Distribution", x = "Turnovers Per Game") +
+  theme_bw()
+print(turnover_distribution)
+
+```
+
+## Multivariate Analysis
+
+```{r}
+library(ggplot2)
+
+# Create a scatterplot of 'Minutes' vs 'Points'
+Minutes_vs_Points_Distribution <- ggplot(selected_data, aes(x = Minutes, y = Points)) +
+  geom_point(color = "blue") +
+  labs(title = "Minutes Played vs Points Per Game Distribution", x = "Minutes Played", y = "Points Per Game") +
+  theme_bw()
+
+# Display the scatterplot
+print(Minutes_vs_Points_Distribution)
+
+Points_vs_FreeThrows_Distribution <- ggplot(selected_data, aes(x = Points, y = FreeThrow)) +
+  geom_point(color = "purple") +
+  labs(title = "Points Per Game vs Free Throws Made Distribution", x = "Points Per Game", y = "FreeThrows Made") +
+  theme_bw()
+print(Points_vs_FreeThrows_Distribution)
+
+# Load the ggplot2 library
+library(ggplot2)
+
+# Create a scatter plot for 'Field Goals' vs 'Turnovers'
+Field_Goals_VS_Turnovers_Distribution <- ggplot(selected_data, aes(x = Field_Goals, y = TurnOvers)) +
+  geom_point(fill = "darkgreen", shape = 21, color = "black") +
+  labs(title = "Field Goals Made vs Turnovers Per Game",
+       x = "Field Goals Per Game", y = "Turnovers Per Game") +
+  theme_bw()
+
+# Display the scatter plot
+print(Field_Goals_VS_Turnovers_Distribution)
+
+Minutes_Played_vs_Turnovers <- ggplot(selected_data, aes(x = Minutes_Played, y = TurnOvers)) +
+  geom_point(fill = "darkgreen", shape = 21, color = "black") +
+  labs(title = "Minutes Played Per Game vs Turnovers Per Game",
+       x = "Minutes Per Game", y = "Turnovers Per Game") +
+  theme_bw()
+
+# Display the bar chart
+print(Minutes_Played_vs_Turnovers)
+
+```
