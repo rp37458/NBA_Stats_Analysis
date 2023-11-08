@@ -171,8 +171,6 @@ print(Points_vs_FreeThrows_Distribution)
 distribution <- lm(Points ~ FreeThrow, data = selected_data)
 summary(distribution)
 
-# Load the ggplot2 library
-library(ggplot2)
 
 # Create a scatter plot for 'Field Goals' vs 'Turnovers'
 Field_Goals_VS_Turnovers_Distribution <- ggplot(selected_data, aes(x = Field_Goals, y = TurnOvers)) +
