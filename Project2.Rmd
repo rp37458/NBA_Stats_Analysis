@@ -1,0 +1,230 @@
+---
+title: "Project 2"
+output: html_document
+date: "2023-11-04"
+author: "Ritesh Penumatsa"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include = TRUE, warning=FALSE,message=FALSE)
+```
+
+## Introduction
+
+The data comes from Basketball Reference where they keep track of player's stats such as points per game, field goal percentage, three-pointers made per game, rebounds, assists, etc. These numbers were gathered based on NBA analysts who keep track of these numbers to see how a player is performing. I chose it because it is interesting to see how certain statistics can influence how a player performs and it will be engaging to me since I like to watch basketball. The variables I will be investigating are Player Name, Minutes Played, Points Per Game, Field Goals Made, Turnovers, and Free Throws Made.
+
+[Basketball Reference](https://www.basketball-reference.com/leagues/NBA_2023_per_game.html)
+
+![](/Users/ritesh/Project2/NBA.jpeg)
+
+## Data Preparation
+
+I used web scraping to import the data into R and I reshaped the data by selecting the columns which consists of the variables being tested and I deselected the rest. In order to process my data, I combined all the variables into a data frame where I can omit any NA's as well as making sure all the numeric type variables consists of numeric values. One challenge I faced when scraping is I had trouble getting the CSS or X Path of certain columns. Another challenge I had was generating a table to display variable, type, and description.
+
+```{r}
+# Load the necessary library
+library(rvest)
+
+# Specify the URL
+NBA_Stats <- "https://www.basketball-reference.com/leagues/NBA_2023_per_game.html"
+
+# Read the HTML content of the web page
+Player_Stats <- read_html(NBA_Stats)
+
+# Extract player names
+Player_Name <- html_text(html_elements(Player_Stats,"th+ .left"))
+
+# Extract minutes played for each player
+Minutes_Played <- html_text(html_elements(Player_Stats, ".right:nth-child(8)"))
+
+# Extract points per game for each player
+Points_Per_Game <- html_text(html_elements(Player_Stats, ".right:nth-child(30)"))
+
+# Extract field goals made for each player
+Field_Goals_Made <- html_text((html_elements(Player_Stats, ".right:nth-child(9)")))
+
+# Extract number of turnovers for each player
+TurnOvers <- html_text((html_elements(Player_Stats, ".right:nth-child(28)")))
+
+# Extract Number of Free Throws Made for each player
+FreeThrows_Made <- html_text((html_elements(Player_Stats, ".right:nth-child(19)")))
+```
+
+## Variable Descriptions
+
+```{r}
+
+selected_data <- data.frame(
+  Name = Player_Name,
+  Minutes = Minutes_Played,
+  Points = Points_Per_Game,
+  Field_Goals = Field_Goals_Made,
+  TurnOvers = TurnOvers,
+  FreeThrow = FreeThrows_Made
+)
+
+selected_data <- na.omit(selected_data)
+selected_data$Points <- as.numeric(selected_data$Points)
+selected_data$Minutes <- as.numeric(selected_data$Minutes)
+selected_data$Field_Goals <- as.numeric(selected_data$Field_Goals)
+selected_data$TurnOvers <- as.numeric(selected_data$TurnOvers)
+selected_data$FreeThrow <- as.numeric(selected_data$FreeThrow)
+
+
+# Reshape 'Minutes' into categories
+selected_data$Playing_Time_Category <- cut(selected_data$Minutes, breaks = c(0, 20, 30, max(selected_data$Minutes)), labels = c("Low", "Medium", "High"))
+
+
+
+variable_names <- names(selected_data)
+variable_types <- sapply(selected_data, class)
+variable_descriptions <- c(
+  "Player's Name",
+  "Minutes Played",
+  "Points Per Game",
+  "Field Goals Made",
+  "Turnovers Per Game",
+  "Free Throws Made"
+)
+
+variable_info <- data.frame(
+  Variable = variable_names[1:6],
+  Type = variable_types[1:6],
+  Description = variable_descriptions
+)
+
+print(variable_info)
+```
+
+## Univariate Analysis
+
+```{r}
+library(ggplot2)
+
+points_scored_distribution <- ggplot(selected_data, aes(x=Points)) +
+  geom_histogram(binwidth = 1, fill = "lightblue", color = "black") +
+  labs(title = "Points Per Game Distribution", x = "Points Per Game", y = "Frequency"
+  ) + theme_bw()
+print(points_scored_distribution)
+summary(selected_data$Points)
+
+# Create the histogram plot
+minutes_played_distribution <- ggplot(selected_data, aes(x = Minutes)) +
+  geom_histogram(binwidth = 1, fill = "darkred", color = "black") +
+  labs(title = "Minutes Played Per Game Distribution", x = "Minutes Played Per Game", y = "Frequency") +
+  theme_bw()
+
+print(minutes_played_distribution)
+summary(selected_data$Minutes)
+
+
+field_goal_distribution <- ggplot(selected_data, aes(x = Field_Goals)) +
+  geom_histogram(binwidth = 1, fill = "orange", color = "black") +
+  labs(title = "Field Goals Per Game Distribution", x = "Field Goals Per Game", y = "Frequency") +
+  theme_bw()
+
+print(field_goal_distribution)
+summary(selected_data$Field_Goals)
+
+turnover_distribution <- ggplot(selected_data, aes(x = TurnOvers)) +
+  geom_boxplot(fill="gray", color = "black") +
+  labs(title = "Turnovers Per Game Distribution", x = "Turnovers Per Game") +
+  theme_bw()
+print(turnover_distribution)
+summary(selected_data$TurnOvers)
+```
+
+For the Turnover Per Game Distribution, the median turnover per game is a little less than 1 with majority of the player falling between 0.5 to 1.5 turnovers per game. There are only 10 NBA Players who average 3 or more turnovers in a game.
+
+For the Field Goals Per Game Distribution, we see the graph is right-skewed. The median field goals per game falls 2-3 per game. But there are a lot of high outliers.
+
+For the Minutes Played Per Game Distribution, the majority of NBA players play 15-25 minutes per game. Here the graph is spread out and does not have a distinguished shape.
+
+For Points Per Game Distribution, the distribution is right-skewed with majority of NBA players averaging 6-10 points per game.
+
+## Multivariate Analysis
+
+```{r}
+library(ggplot2)
+
+# Create a scatterplot of 'Minutes' vs 'Points'
+Minutes_vs_Points_Distribution <- ggplot(selected_data, aes(x = Minutes, y = Points)) +
+  geom_point(color = "blue") +
+  labs(title = "Minutes Played vs Points Per Game Distribution", x = "Minutes Played", y = "Points Per Game") +
+  theme_bw()
+
+# Display the scatterplot
+print(Minutes_vs_Points_Distribution)
+distribution <- lm(Points ~ Minutes, data = selected_data)
+summary(distribution)
+
+Points_vs_FreeThrows_Distribution <- ggplot(selected_data, aes(x = Points, y = FreeThrow)) +
+  geom_point(color = "purple") +
+  labs(title = "Points Per Game vs Free Throws Made Distribution", x = "Points Per Game", y = "FreeThrows Made") +
+  theme_bw()
+print(Points_vs_FreeThrows_Distribution)
+distribution <- lm(Points ~ FreeThrow, data = selected_data)
+summary(distribution)
+
+# Load the ggplot2 library
+library(ggplot2)
+
+# Create a scatter plot for 'Field Goals' vs 'Turnovers'
+Field_Goals_VS_Turnovers_Distribution <- ggplot(selected_data, aes(x = Field_Goals, y = TurnOvers)) +
+  geom_point(fill = "darkgreen", shape = 21, color = "black") +
+  labs(title = "Field Goals Made vs Turnovers Per Game",
+       x = "Field Goals Per Game", y = "Turnovers Per Game") +
+  theme_bw()
+
+# Display the scatter plot
+print(Field_Goals_VS_Turnovers_Distribution)
+distribution <- lm(Field_Goals ~ TurnOvers, data = selected_data)
+summary(distribution)
+
+Minutes_Played_vs_Turnovers <- ggplot(selected_data, aes(x = Minutes_Played, y = TurnOvers)) +
+  geom_point(fill = "darkgreen", shape = 21, color = "black") +
+  labs(title = "Minutes Played Per Game vs Turnovers Per Game",
+       x = "Minutes Per Game", y = "Turnovers Per Game") +
+  theme_bw()
+
+# Display the bar chart
+print(Minutes_Played_vs_Turnovers)
+distribution <- lm(Minutes ~ TurnOvers, data = selected_data)
+summary(distribution)
+
+Playing_Time_VS_Points <- ggplot(selected_data, aes(x = Playing_Time_Category, y = Points)) +
+  geom_point(color = "darkred") +
+  labs(title = "Playing Time vs Points Per Game", x = "Playing Time", y = "Points Per Game") +
+  theme_bw()
+print(Playing_Time_VS_Points)
+
+summary_lm <- lm(Points ~ Playing_Time_Category, data = selected_data)
+summary(summary_lm)
+
+```
+
+The Playing Time Per Game vs Points Per Game displays a scatter plot where the Playing Time is separating into three different categories: low, medium, high. It displays the points per game for each of the three categories. The points per game is greatest in high playing time and lowest in low playing time.
+
+The Minutes Per Game vs Turnovers Per Game displays a scatter plot comparing the relationship between Minutes Per Game and Turnovers per Game. We can conclude as a player plays more minutes they have a higher probability of committing more turnovers.
+
+The Field Goal vs Turnovers per game displays a scatter plot comparing these two statistics. Since there is a positive strong linear correlation between them, we can be safe to conclude as a player shoots the ball more they are likely to commit more turnovers.
+
+The Points Per Game vs Free Throws per game displays a scatter plot comparing these two statistics. Since there is a positive strong correlation between them, we can be safe to conclude as a player score more points they are likely to to have more made free throws.
+
+The Minutes vs Points Per Game distribution displays a scatter plot comparing these two statistics. Since there is a positive strong correlation between them, we can be safe to conclude as a player plays more minutes they are likely to score more points.
+
+## Reproducibility
+
+[Private GitHub](https://github.com/rp37458/Project_2/tree/main)
+
+The GitHub Repository consists of rmd file, html file resulted from knitting, image, and readMe file.
+
+## Conclusion
+
+From the analysis tested, there was a positive strong correlation between Minutes vs Points Per Game, Points Per Game vs Free Throws per game, Field Goal vs Turnovers, Minutes Per Game vs Turnovers Per Game, and Playing Time Per Game vs Points Per Game. It means as one of these variables were directly proportions the another as when one increases the other increases and vise versa. For points per game distribution, we can see 50% of the NBA players falls between 4.1 to 11.5 as the league average is about 8 ppg. For minutes per game, 50% of NBA players play on average between 12 to 28 minutes, 50% of NBA players make between 1 to 4 shots per game, and 50% of NBA players have an average of 0.5 to 1.4 turnovers per game. They were what I expected.
+
+## References
+
+[Basketball](https://www.basketball-reference.com/leagues/NBA_2023_per_game.html)
+
+[Basketball Logo](https://twitter.com/NBAPR/photo)
